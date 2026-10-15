@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { App, Modal, Notice } from "obsidian";
+import { App, Modal } from "obsidian";
 
 const runFile = promisify(execFile);
 
@@ -22,36 +22,21 @@ export async function checkEnvironment(pythonPath: string): Promise<EnvironmentC
   }
 }
 
-class InstallModal extends Modal {
-  private settled = false;
-  constructor(app: App, private pythonPath: string, private done: (install: boolean) => void) { super(app); }
+class MissingDependenciesModal extends Modal {
+  constructor(app: App, private pythonPath: string, private missing: string[], private done: () => void) { super(app); }
   onOpen(): void {
-    this.titleEl.setText("Install Jupyter dependencies?");
-    this.contentEl.createEl("p", { text: "The selected Python environment is missing packages required to run notebooks." });
-    this.contentEl.createEl("code", { text: `"${this.pythonPath}" -m pip install jupyter_client ipykernel` });
+    this.titleEl.setText("Jupyter dependencies missing");
+    this.contentEl.createEl("p", { text: `The selected Python environment is missing ${this.missing.join(", ")}. Install the packages yourself in a terminal, then run the cell again.` });
+    this.contentEl.createEl("code", { text: `& "${this.pythonPath}" -m pip install ${this.missing.join(" ")}` });
     const buttons = this.contentEl.createDiv({ cls: "objupyter-modal-actions" });
-    buttons.createEl("button", { text: "Cancel" }).onclick = () => { this.close(); };
-    buttons.createEl("button", { text: "Install", cls: "mod-cta" }).onclick = () => { this.settled = true; this.done(true); this.close(); };
+    buttons.createEl("button", { text: "Close", cls: "mod-cta" }).onclick = () => this.close();
   }
-  onClose(): void { if (!this.settled) this.done(false); this.contentEl.empty(); }
+  onClose(): void { this.done(); this.contentEl.empty(); }
 }
 
 export async function ensureEnvironment(app: App, pythonPath: string): Promise<string> {
   const initial = await checkEnvironment(pythonPath);
   if (!initial.missing.length) return initial.executable;
-  const install = await new Promise<boolean>((resolve) => new InstallModal(app, initial.executable, resolve).open());
-  if (!install) throw new Error("Jupyter dependencies were not installed.");
-  new Notice("Installing Jupyter dependencies into the selected Python environment…");
-  try {
-    await runFile(initial.executable, ["-m", "pip", "install", "jupyter_client", "ipykernel"], {
-      timeout: 600_000, maxBuffer: 10 * 1024 * 1024, windowsHide: true
-    });
-  } catch (error) {
-    const detail = (error as Error & { stderr?: string }).stderr || (error as Error).message;
-    throw new Error(`Dependency installation failed: ${detail}\nRun manually: "${initial.executable}" -m pip install jupyter_client ipykernel`);
-  }
-  const verified = await checkEnvironment(initial.executable);
-  if (verified.missing.length) throw new Error(`Still missing: ${verified.missing.join(", ")}`);
-  new Notice("Jupyter dependencies installed.");
-  return verified.executable;
+  await new Promise<void>((resolve) => new MissingDependenciesModal(app, initial.executable, initial.missing, resolve).open());
+  throw new Error("Install the missing Jupyter packages in your Python environment, then run the cell again.");
 }
