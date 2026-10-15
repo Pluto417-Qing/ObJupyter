@@ -1,9 +1,9 @@
 {
   "id": "objupyter",
-  "name": "ObJupyter",
+  "name": "Jupyter Notebook Editor",
   "author": "yuanqh23",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "minAppVersion": "1.5.0",
-  "description": "Edit and run Jupyter notebooks in an Obsidian vault.",
+  "description": "Edit and run Jupyter notebooks in your vault.",
   "isDesktopOnly": true
 }
