@@ -188,7 +188,7 @@
 .objupyter-output-collapser:focus-visible::before,
 .objupyter-output-wrapper.is-collapsed .objupyter-output-collapser::before { opacity: 1; }
 .objupyter-output-collapser:focus-visible,
-.objupyter-output-placeholder:focus-visible { outline: 2px solid var(--objupyter-accent); outline-offset: 1px; }
+.objupyter-output-placeholder-summary:focus-visible { outline: 2px solid var(--objupyter-accent); outline-offset: 1px; }
 .objupyter-output-wrapper.is-collapsed .objupyter-outputs,
 .objupyter-output-wrapper:not(.is-collapsed) .objupyter-output-placeholder { display: none; }
 .objupyter-output-placeholder {
@@ -197,24 +197,22 @@
   align-items: center;
   width: 100%;
   min-height: 26px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  color: var(--text-muted);
-  text-align: left;
-  cursor: pointer;
 }
 .objupyter-output-placeholder-summary {
   display: flex;
   align-items: center;
   min-width: 0;
+  width: 100%;
   padding: 6px 8px;
   border: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  box-shadow: none;
   background: var(--objupyter-output-bg);
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
 }
-.objupyter-output-placeholder:hover .objupyter-output-placeholder-summary { border-color: var(--background-modifier-border); }
+.objupyter-output-placeholder-summary:hover { background: var(--objupyter-output-bg); border-color: var(--background-modifier-border); }
 .objupyter-output-placeholder-text {
   overflow: hidden;
   font-family: var(--font-monospace);

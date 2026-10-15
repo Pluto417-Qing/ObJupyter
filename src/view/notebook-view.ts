@@ -220,9 +220,9 @@ export class NotebookView extends TextFileView {
       const outputHost = outputWrapper.createDiv({ cls: "objupyter-outputs" });
       outputHost.id = `objupyter-output-${crypto.randomUUID()}`;
       collapser.setAttribute("aria-controls", outputHost.id);
-      const placeholder = outputWrapper.createEl("button", { cls: "objupyter-output-placeholder", attr: { type: "button", title: "Click to expand output", "aria-label": "Expand output", "aria-expanded": "false", "aria-controls": outputHost.id } });
-      placeholder.createSpan({ cls: "objupyter-output-placeholder-prompt" });
-      const summary = placeholder.createSpan({ cls: "objupyter-output-placeholder-summary" });
+      const placeholder = outputWrapper.createDiv({ cls: "objupyter-output-placeholder" });
+      placeholder.createSpan({ cls: "objupyter-output-placeholder-prompt", attr: { "aria-hidden": "true" } });
+      const summary = placeholder.createEl("button", { cls: "objupyter-output-placeholder-summary", attr: { type: "button", title: "Click to expand output", "aria-label": "Expand output", "aria-expanded": "false", "aria-controls": outputHost.id } });
       summary.createSpan({ cls: "objupyter-output-placeholder-text" });
       summary.createSpan({ text: "⋯", cls: "objupyter-output-placeholder-ellipsis", attr: { "aria-hidden": "true" } });
       const toggle = (event: MouseEvent) => {
@@ -234,7 +234,7 @@ export class NotebookView extends TextFileView {
         collapser.focus();
       };
       collapser.onclick = toggle;
-      placeholder.onclick = toggle;
+      summary.onclick = toggle;
       this.outputElements.set(cell, outputHost);
       this.refreshOutputs(cell);
     }
