@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="28" viewBox="0 0 160 28" role="img" aria-label="Obsidian 1.5 or later">
+  <rect width="160" height="28" rx="14" fill="#e8e8fb"/>
+  <circle cx="17" cy="14" r="5" fill="#7c65d1"/>
+  <text x="30" y="19" fill="#34276b" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700">Obsidian 1.5+</text>
+</svg>

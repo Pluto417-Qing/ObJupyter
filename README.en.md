@@ -1,10 +1,22 @@
 # ObJupyter
 
+<div align="center">
+  <img src="docs/assets/objupyter-banner.svg" alt="ObJupyter notebook editor with Markdown, Python, and output cells" width="100%" />
+  <p><strong>Keep ideas, code, and results together in your knowledge base.</strong></p>
+  <p>
+    <a href="manifest.json"><img src="docs/assets/badge-version.svg" alt="Version 0.1.0" /></a>
+    <a href="#installation"><img src="docs/assets/badge-obsidian.svg" alt="Requires Obsidian 1.5 or later" /></a>
+    <a href="#current-limitations"><img src="docs/assets/badge-windows.svg" alt="Windows desktop" /></a>
+    <a href="#output-and-saving"><img src="docs/assets/badge-nbformat.svg" alt="Notebook v4 format" /></a>
+    <a href="#support"><img src="docs/assets/badge-coffee.svg" alt="Support ObJupyter" /></a>
+  </p>
+  <p><a href="README.md">简体中文</a> · <strong>English</strong></p>
+  <p><a href="#installation">Install</a> · <a href="#quick-start">Quick start</a> · <a href="#python-environments">Python environments</a> · <a href="#support">Support</a></p>
+</div>
+
+---
+
 Edit and run Jupyter notebooks inside Obsidian, keeping code, notes, and results together in a standard `.ipynb` file.
-
-[简体中文](README.md) · **English**
-
-[Installation](#installation) · [Quick start](#quick-start) · [Python environments](#python-environments) · [Troubleshooting](#troubleshooting) · [Support](#support) · [Development](#development)
 
 > ObJupyter is an early release for **Obsidian Desktop on Windows**. It starts a local Python kernel and is not listed in the Obsidian community plugin directory.
 
@@ -110,9 +122,14 @@ Running notebook code has the same local permissions as running a Python script.
 
 If ObJupyter is useful to you, you can voluntarily support its continued development and maintenance through WeChat Pay or Alipay. Donations do not unlock features and are not required to use the plugin or report issues.
 
+<details>
+<summary><img src="docs/assets/badge-coffee.svg" alt="Buy me a coffee; click to reveal payment QR codes" /> Show payment QR codes</summary>
+
 | WeChat Pay | Alipay |
 | :---: | :---: |
 | <img src="assets/support/wechat-pay.jpg" alt="WeChat Pay QR code" width="240"> | <img src="assets/support/alipay.jpg" alt="Alipay QR code" width="240"> |
+
+</details>
 
 ## Development
 

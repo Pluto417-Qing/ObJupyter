@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">ObJupyter</title>
+  <desc id="desc">A notebook page connecting Markdown, Python code, and its output inside a purple workspace.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10172d"/>
+      <stop offset="0.56" stop-color="#30266f"/>
+      <stop offset="1" stop-color="#4337a7"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#70e2d4"/>
+      <stop offset="1" stop-color="#9aa8ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="13" stdDeviation="16" flood-color="#090d28" flood-opacity="0.36"/>
+    </filter>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" fill="none" stroke="#ffffff" stroke-opacity="0.055"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="360" rx="24" fill="url(#background)"/>
+  <rect width="1200" height="360" rx="24" fill="url(#grid)"/>
+  <circle cx="1138" cy="10" r="190" fill="#8b7af0" opacity="0.12"/>
+  <circle cx="574" cy="382" r="160" fill="#62d6d0" opacity="0.09"/>
+
+  <g transform="translate(70 66)">
+    <rect width="76" height="76" rx="19" fill="url(#mark)"/>
+    <path d="M23 19h29a7 7 0 0 1 7 7v31a7 7 0 0 1-7 7H23a7 7 0 0 1-7-7V26a7 7 0 0 1 7-7Z" fill="#19204e" opacity="0.92"/>
+    <path d="M26 32h23M26 43h15" stroke="#e7fbff" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="49" cy="51" r="6" fill="#72e0d5"/>
+  </g>
+  <text x="166" y="116" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="62" font-weight="750" letter-spacing="-2">ObJupyter</text>
+  <text x="74" y="187" fill="#e6e6ff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="23" font-weight="500">Your notebooks, right beside your notes.</text>
+  <text x="74" y="232" fill="#b8c0e5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17">Edit cells · Run local Python · Save standard .ipynb</text>
+  <g transform="translate(74 266)">
+    <rect width="158" height="36" rx="18" fill="#6b62c4" opacity="0.52"/>
+    <circle cx="22" cy="18" r="6" fill="#6be1c3"/>
+    <text x="38" y="24" fill="#f5f7ff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="600">LOCAL KERNEL</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="645" y="43" width="493" height="278" rx="18" fill="#f7f8ff"/>
+    <path d="M663 43h457a18 18 0 0 1 18 18v28H645V61a18 18 0 0 1 18-18Z" fill="#23234c"/>
+    <circle cx="670" cy="66" r="5" fill="#ff8e9c"/>
+    <circle cx="687" cy="66" r="5" fill="#ffd582"/>
+    <circle cx="704" cy="66" r="5" fill="#7cdfc7"/>
+    <text x="735" y="72" fill="#edf0ff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">analysis.ipynb</text>
+    <rect x="1010" y="54" width="103" height="24" rx="12" fill="#373b71"/>
+    <circle cx="1025" cy="66" r="4" fill="#6de1bf"/>
+    <text x="1037" y="71" fill="#dce4ff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12">Python</text>
+
+    <rect x="668" y="109" width="447" height="59" rx="10" fill="#eeedff"/>
+    <rect x="668" y="109" width="4" height="59" rx="2" fill="#9e90ed"/>
+    <text x="688" y="132" fill="#5e54a8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700">MARKDOWN</text>
+    <text x="688" y="155" fill="#34345f" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">What can this data tell us?</text>
+
+    <rect x="668" y="180" width="447" height="70" rx="10" fill="#ffffff" stroke="#dfe2f4"/>
+    <rect x="668" y="180" width="4" height="70" rx="2" fill="#66b5d6"/>
+    <text x="688" y="203" fill="#547293" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700">CODE [1]</text>
+    <text x="688" y="232" fill="#272d56" font-family="Consolas, Menlo, monospace" font-size="18">sum([2, 4, 6])</text>
+    <circle cx="1089" cy="215" r="17" fill="#e2f7f0"/>
+    <path d="m1084 207 12 8-12 8Z" fill="#168e76"/>
+
+    <rect x="668" y="262" width="447" height="38" rx="10" fill="#eaf8f2"/>
+    <text x="688" y="286" fill="#26735e" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700">OUT [1]</text>
+    <text x="780" y="286" fill="#1f5547" font-family="Consolas, Menlo, monospace" font-size="18" font-weight="700">12</text>
+  </g>
+</svg>
