@@ -1,25 +1,278 @@
-.objupyter-view { overflow: auto; padding: 0 18px 24px; }
-.objupyter-toolbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0; background: var(--background-primary); border-bottom: 1px solid var(--background-modifier-border); }
-.objupyter-python-button { margin-left: auto; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.objupyter-cells { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
-.objupyter-cell { border: 1px solid var(--background-modifier-border); border-radius: 8px; overflow: hidden; background: var(--background-primary); }
-.objupyter-cell:focus-within { border-color: var(--interactive-accent); }
-.objupyter-cell-header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--background-secondary); }
-.objupyter-cell-header button { padding: 2px 8px; font-size: var(--font-smaller); }
-.objupyter-cell-type { max-width: 95px; font-size: var(--font-smaller); }
-.objupyter-count { min-width: 48px; color: var(--text-muted); font-family: var(--font-monospace); }
-.objupyter-status { margin-right: auto; color: var(--text-muted); font-size: var(--font-smaller); }
-.objupyter-editor .cm-editor { font-family: var(--font-monospace); background: var(--background-primary); }
-.objupyter-editor .cm-content { padding: 10px; min-height: 38px; }
-.objupyter-markdown-preview { padding: 10px 16px; }
-.objupyter-outputs { padding: 0 12px; }
-.objupyter-output { border-top: 1px solid var(--background-modifier-border); padding: 8px 0; overflow: auto; }
-.objupyter-output pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-monospace); }
-.objupyter-output img { max-width: 100%; height: auto; }
-.objupyter-error, .objupyter-stderr { color: var(--text-error); }
-.objupyter-input-area:not(:empty) { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
-.objupyter-input-area input { flex: 1; }
-.objupyter-footer, .objupyter-modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+.objupyter-view {
+  --objupyter-prompt-width: 82px;
+  overflow: auto;
+  min-width: 0;
+  padding: 0;
+  color: var(--text-normal);
+  background: var(--background-primary);
+}
+
+.objupyter-layout { container-type: inline-size; min-width: 0; }
+.objupyter-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 40px;
+  padding: 4px 12px;
+  background: var(--background-primary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.objupyter-toolbar-button,
+.objupyter-python-button,
+.objupyter-cell-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: var(--font-smaller);
+  white-space: nowrap;
+}
+.objupyter-toolbar-button:hover,
+.objupyter-python-button:hover,
+.objupyter-cell-action:not(:disabled):hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border);
+}
+.objupyter-toolbar-button:focus-visible,
+.objupyter-python-button:focus-visible,
+.objupyter-cell-action:focus-visible,
+.objupyter-cell-type:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+.objupyter-toolbar-button svg,
+.objupyter-python-button svg,
+.objupyter-cell-action svg { width: 16px; height: 16px; flex: none; }
+.objupyter-toolbar-divider { height: 20px; margin: 0 5px; border-left: 1px solid var(--background-modifier-border); }
+.objupyter-cell-type {
+  width: 112px;
+  min-height: 28px;
+  margin: 0 3px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: var(--font-smaller);
+}
+.objupyter-python-button { margin-left: auto; max-width: min(260px, 40%); }
+.objupyter-python-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.objupyter-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px 8px;
+}
+.objupyter-cell {
+  min-width: 0;
+  padding: 4px 8px 8px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+}
+.objupyter-cell.is-selected { border-color: var(--interactive-accent); }
+.objupyter-cell.is-selected .objupyter-count { color: var(--interactive-accent); }
+.objupyter-cell-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2px;
+  height: 23px;
+  padding-right: 1px;
+}
+.objupyter-cell-action { min-width: 25px; min-height: 23px; padding: 2px 4px; opacity: 0; }
+.objupyter-cell-action:disabled { opacity: 0; cursor: default; }
+.objupyter-cell:hover .objupyter-cell-action:not(:disabled),
+.objupyter-cell.is-selected .objupyter-cell-action:not(:disabled),
+.objupyter-cell-action:focus-visible { opacity: 1; }
+.objupyter-status {
+  margin-right: auto;
+  padding-left: var(--objupyter-prompt-width);
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
+.objupyter-input-row,
+.objupyter-output-row {
+  display: grid;
+  grid-template-columns: var(--objupyter-prompt-width) minmax(0, 1fr);
+  min-width: 0;
+}
+.objupyter-count,
+.objupyter-output-prompt {
+  display: block;
+  overflow: hidden;
+  padding: 6px 8px 0 0;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  line-height: 1.5;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+.objupyter-input-body { min-width: 0; }
+.objupyter-view .objupyter-editor.is-hidden,
+.objupyter-view .objupyter-markdown-preview.is-hidden { display: none; }
+.objupyter-editor .cm-editor {
+  min-width: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  background: var(--background-primary-alt, var(--background-primary));
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  box-shadow: none;
+}
+.objupyter-editor .cm-editor.cm-focused { outline: none; border-color: var(--interactive-accent); }
+.objupyter-editor .cm-scroller { min-width: 0; font-family: inherit; }
+.objupyter-editor .cm-content { min-height: 34px; padding: 6px 8px; }
+.objupyter-editor .cm-gutters {
+  background: var(--background-secondary);
+  border-right: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+.objupyter-markdown-preview {
+  min-height: 34px;
+  padding: 5px 9px;
+  overflow-wrap: anywhere;
+}
+.objupyter-markdown-preview > :first-child { margin-top: 0; }
+.objupyter-markdown-preview > :last-child { margin-bottom: 0; }
+.objupyter-output-wrapper { position: relative; min-width: 0; margin-top: 5px; }
+.objupyter-output-wrapper:not(.has-outputs) { display: none; }
+.objupyter-output-collapser {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 12px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  background: transparent;
+  cursor: pointer;
+}
+.objupyter-output-collapser::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 5px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--interactive-accent);
+  opacity: 0.45;
+}
+.objupyter-output-collapser:hover::before,
+.objupyter-output-collapser:focus-visible::before,
+.objupyter-output-wrapper.is-collapsed .objupyter-output-collapser::before { opacity: 1; }
+.objupyter-output-collapser:focus-visible,
+.objupyter-output-placeholder:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 1px; }
+.objupyter-output-wrapper.is-collapsed .objupyter-outputs,
+.objupyter-output-wrapper:not(.is-collapsed) .objupyter-output-placeholder { display: none; }
+.objupyter-output-placeholder {
+  display: grid;
+  grid-template-columns: var(--objupyter-prompt-width) minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.objupyter-output-placeholder-summary {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+}
+.objupyter-output-placeholder:hover .objupyter-output-placeholder-summary { border-color: var(--background-modifier-border); }
+.objupyter-output-placeholder-text {
+  overflow: hidden;
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.objupyter-output-placeholder-ellipsis {
+  flex: none;
+  margin-left: 5px;
+  padding: 0 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 3px;
+  font-family: var(--font-monospace);
+  line-height: 17px;
+}
+.objupyter-outputs { min-width: 0; }
+.objupyter-output-row + .objupyter-output-row { margin-top: 3px; }
+.objupyter-output { min-width: 0; padding: 2px 8px 3px; overflow: auto; }
+.objupyter-output pre {
+  margin: 0;
+  color: inherit;
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.objupyter-output img { display: block; max-width: 100%; height: auto; }
+.objupyter-output .objupyter-error,
+.objupyter-output .objupyter-stderr { color: var(--text-error); }
+.objupyter-input-area:not(:empty) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 5px 8px 0 var(--objupyter-prompt-width);
+}
+.objupyter-input-area input { flex: 1 1 130px; min-width: 0; }
+.objupyter-footer { display: flex; gap: 8px; padding: 3px 24px 20px calc(24px + var(--objupyter-prompt-width)); }
+.objupyter-footer button {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
+.objupyter-footer button:hover { border-color: var(--background-modifier-border); background: var(--background-modifier-hover); }
 .objupyter-path-input { width: 100%; }
 .objupyter-invalid-preview { max-height: 300px; overflow: auto; white-space: pre-wrap; }
 .objupyter-html-output { overflow: auto; }
+.objupyter-modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+@container (max-width: 620px) {
+  .objupyter-toolbar-label { display: none; }
+  .objupyter-toolbar-button { min-width: 28px; padding: 3px 5px; }
+  .objupyter-python-button { max-width: 160px; }
+  .objupyter-cells { padding-right: 8px; padding-left: 8px; }
+}
+@container (max-width: 420px) {
+  .objupyter-cells { --objupyter-prompt-width: 59px; }
+  .objupyter-toolbar { padding-right: 6px; padding-left: 6px; }
+  .objupyter-toolbar-divider { margin: 0 2px; }
+  .objupyter-cell-type { width: 80px; }
+  .objupyter-python-button { max-width: 110px; }
+  .objupyter-cell { padding-right: 4px; padding-left: 4px; }
+  .objupyter-footer { padding-left: 70px; }
+}

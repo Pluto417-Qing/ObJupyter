@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createNotebook, moveCell, newCell, setSource, sourceText } from "../src/notebook/model";
+import { createNotebook, isOutputCollapsed, moveCell, newCell, setOutputCollapsed, setSource, sourceText } from "../src/notebook/model";
 import { parseNotebook, serializeNotebook } from "../src/notebook/serializer";
 
 describe("notebook files", () => {
@@ -23,6 +23,19 @@ describe("notebook files", () => {
     expect(reopened.metadata.custom).toEqual({ a: 1 });
     expect(reopened.cells[0].metadata.vendor).toBe(true);
     expect(reopened.cells[0].outputs?.[0].data?.["application/vnd.example+json"]).toEqual({ x: 7 });
+  });
+
+  it("persists Jupyter output collapse without removing output data", () => {
+    const notebook = createNotebook();
+    const cell = notebook.cells[0];
+    cell.outputs = [{ output_type: "stream", name: "stdout", text: "hello\n" }];
+    cell.metadata.vendor = { keep: true };
+    setOutputCollapsed(cell, true);
+    const reopened = parseNotebook(serializeNotebook(notebook));
+    expect(isOutputCollapsed(reopened.cells[0])).toBe(true);
+    expect(reopened.cells[0].outputs).toEqual(cell.outputs);
+    setOutputCollapsed(reopened.cells[0], false);
+    expect(reopened.cells[0].metadata).toEqual({ vendor: { keep: true } });
   });
 
   it("moves cells without changing their IDs", () => {

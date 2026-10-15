@@ -1,4 +1,5 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, setIcon } from "obsidian";
+import type { NotebookCell } from "../notebook/model";
 
 export interface ToolbarActions {
   create(): void;
@@ -7,22 +8,35 @@ export interface ToolbarActions {
   interrupt(): void;
   restart(): void;
   choosePython(): void;
+  changeCellType(type: NotebookCell["cell_type"]): void;
 }
 
-export function renderToolbar(parent: HTMLElement, pythonPath: string, actions: ToolbarActions): HTMLElement {
+export function renderToolbar(parent: HTMLElement, pythonPath: string, selectedType: NotebookCell["cell_type"] | null, actions: ToolbarActions): HTMLSelectElement {
   const bar = parent.createDiv({ cls: "objupyter-toolbar" });
-  const button = (label: string, click: () => void) => {
-    bar.createEl("button", { text: label }).onclick = click;
+  const button = (icon: string, label: string, click: () => void) => {
+    const control = bar.createEl("button", { cls: "objupyter-toolbar-button", attr: { type: "button", "aria-label": label, title: label } });
+    setIcon(control, icon);
+    control.createSpan({ text: label, cls: "objupyter-toolbar-label" });
+    control.onclick = click;
   };
-  button("+ Cell", actions.create);
-  button("Run cell", actions.runCurrent);
-  button("Run all", actions.runAll);
-  button("Stop", actions.interrupt);
-  button("Restart", actions.restart);
-  const environment = bar.createEl("button", { text: pythonPath ? `Python: ${pythonPath}` : "Choose Python…", cls: "objupyter-python-button" });
+  button("plus", "Add cell", actions.create);
+  bar.createSpan({ cls: "objupyter-toolbar-divider" });
+  button("play", "Run cell", actions.runCurrent);
+  button("list-video", "Run all", actions.runAll);
+  button("square", "Stop", actions.interrupt);
+  button("rotate-ccw", "Restart", actions.restart);
+  bar.createSpan({ cls: "objupyter-toolbar-divider" });
+  const type = bar.createEl("select", { cls: "objupyter-cell-type", attr: { "aria-label": "Current cell type", title: "Current cell type" } });
+  for (const name of ["code", "markdown", "raw"] as const) type.createEl("option", { text: name[0].toUpperCase() + name.slice(1), value: name });
+  type.value = selectedType ?? "code";
+  type.disabled = selectedType === null;
+  type.onchange = () => actions.changeCellType(type.value as NotebookCell["cell_type"]);
+  const environment = bar.createEl("button", { cls: "objupyter-python-button", attr: { type: "button", "aria-label": "Choose Python environment" } });
+  setIcon(environment, "circle-dot");
+  environment.createSpan({ text: pythonPath ? `Python: ${pythonPath.split(/[\\/]/).pop()}` : "Choose Python…" });
   environment.title = pythonPath || "Choose a Python executable";
   environment.onclick = actions.choosePython;
-  return bar;
+  return type;
 }
 
 class PythonPathModal extends Modal {

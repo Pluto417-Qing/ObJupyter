@@ -40,6 +40,15 @@ export function setSource(cell: NotebookCell, value: string): void {
   cell.source = value;
 }
 
+export function isOutputCollapsed(cell: NotebookCell): boolean {
+  return cell.metadata.collapsed === true;
+}
+
+export function setOutputCollapsed(cell: NotebookCell, collapsed: boolean): void {
+  if (collapsed) cell.metadata.collapsed = true;
+  else delete cell.metadata.collapsed;
+}
+
 export function newCell(type: "code" | "markdown", source = ""): NotebookCell {
   const base: NotebookCell = {
     cell_type: type,

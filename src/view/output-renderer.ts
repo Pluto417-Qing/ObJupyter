@@ -59,9 +59,29 @@ export function renderOutput(parent: HTMLElement, output: NotebookOutput): void 
 export function renderCellOutputs(parent: HTMLElement, cell: NotebookCell): void {
   parent.empty();
   for (const output of cell.outputs ?? []) {
-    const outputEl = parent.createDiv({ cls: "objupyter-output" });
-    renderOutput(outputEl, output);
+    const row = parent.createDiv({ cls: "objupyter-output-row" });
+    const count = output.execution_count ?? cell.execution_count;
+    row.createSpan({
+      text: output.output_type === "execute_result" && count != null ? `Out[${count}]:` : "",
+      cls: "objupyter-output-prompt"
+    });
+    const body = row.createDiv({ cls: "objupyter-output" });
+    renderOutput(body, output);
   }
+}
+
+export function outputPlaceholderText(cell: NotebookCell): string {
+  const first = cell.outputs?.[0];
+  if (!first) return "";
+  if (first.output_type === "stream") return asText(first.text).split("\n").find((line) => line.trim()) ?? "";
+  if (first.output_type === "error") return `${first.ename ?? "Error"}: ${first.evalue ?? ""}`;
+  const data = first.data ?? {};
+  for (const mime of ["text/html", "image/svg+xml", "application/pdf", "text/markdown", "text/plain", "text"]) {
+    const value = asText(data[mime]);
+    const line = value.split("\n").find((part) => part.trim());
+    if (line) return line;
+  }
+  return "";
 }
 
 export function markdownWithAttachments(cell: NotebookCell): string {
