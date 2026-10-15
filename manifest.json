@@ -2,7 +2,7 @@
   "id": "objupyter",
   "name": "ObJupyter",
   "author": "yuanqh23",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "minAppVersion": "1.5.0",
   "description": "Edit and run Jupyter notebooks in an Obsidian vault.",
   "isDesktopOnly": true
