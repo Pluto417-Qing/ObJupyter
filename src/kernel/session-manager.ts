@@ -10,6 +10,12 @@ export class SessionManager {
   private sessions = new Map<string, Session>();
   private starting = new Map<string, Promise<Session>>();
 
+  canSwitch(filePath: string, ownedBridge: BridgeClient | null): boolean {
+    if (this.starting.has(filePath)) return false;
+    const session = this.sessions.get(filePath);
+    return !session || (session.users === 1 && session.bridge === ownedBridge);
+  }
+
   async acquire(filePath: string, pythonPath: string, cwd: string): Promise<BridgeClient> {
     const existing = this.sessions.get(filePath);
     if (existing) {

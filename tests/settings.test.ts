@@ -14,3 +14,20 @@ describe("Python bindings", () => {
     expect(settings.notebookPythonPaths).toEqual({ "folder/new.ipynb": "python.exe" });
   });
 });
+
+describe("Notebook appearance", () => {
+  it("preserves valid colors and rejects invalid saved values", () => {
+    const settings = normalizeSettings({ appearance: {
+      codeBackground: "#A1B2C3",
+      markdownBackground: "red",
+      outputBackground: "#112233",
+      accentColor: "var(--text-normal)"
+    } });
+    expect(settings.appearance).toEqual({
+      codeBackground: "#a1b2c3",
+      markdownBackground: "",
+      outputBackground: "#112233",
+      accentColor: ""
+    });
+  });
+});

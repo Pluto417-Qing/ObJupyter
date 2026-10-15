@@ -8,8 +8,11 @@ import { parseNotebook, serializeNotebook } from "../notebook/serializer";
 import { pythonForNotebook } from "../settings";
 import { createCellEditor } from "./cell-editor";
 import { markdownWithAttachments, outputPlaceholderText, renderCellOutputs } from "./output-renderer";
-import { promptPythonPath, renderToolbar } from "./kernel-toolbar";
+import { renderToolbar } from "./kernel-toolbar";
+import { promptPythonEnvironment } from "./environment-picker";
+import { saveNotebookEnvironmentBinding } from "../kernel/environment-binding";
 import { ensureEnvironment } from "../kernel/environment";
+import { AppearanceModal } from "./appearance-modal";
 import type { EditorView } from "@codemirror/view";
 
 export const NOTEBOOK_VIEW_TYPE = "objupyter-notebook";
@@ -135,6 +138,7 @@ export class NotebookView extends TextFileView {
     this.inputElements.clear();
     this.contentEl.empty();
     this.contentEl.addClass("objupyter-view");
+    this.applyAppearance();
     this.selectedIndex = Math.max(0, Math.min(this.selectedIndex, this.notebook.cells.length - 1));
     const layout = this.contentEl.createDiv({ cls: "objupyter-layout" });
     layout.addEventListener("keydown", this.handleNotebookKeyDown, true);
@@ -146,6 +150,7 @@ export class NotebookView extends TextFileView {
       interrupt: () => void this.interrupt(),
       restart: () => void this.restart(),
       choosePython: () => void this.choosePython(),
+      openAppearance: () => new AppearanceModal(this.app, this.plugin).open(),
       changeCellType: (type) => {
         const cell = this.notebook?.cells[this.selectedIndex];
         if (cell) this.changeCellType(cell, type);
@@ -157,6 +162,20 @@ export class NotebookView extends TextFileView {
     const footer = layout.createDiv({ cls: "objupyter-footer" });
     footer.createEl("button", { text: "+ Code" }).onclick = () => this.addCell("code");
     footer.createEl("button", { text: "+ Markdown" }).onclick = () => this.addCell("markdown");
+  }
+
+  applyAppearance(): void {
+    const { codeBackground, markdownBackground, outputBackground, accentColor } = this.plugin.settings.appearance;
+    const values = {
+      "--objupyter-code-bg": codeBackground,
+      "--objupyter-markdown-bg": markdownBackground,
+      "--objupyter-output-bg": outputBackground,
+      "--objupyter-accent": accentColor
+    };
+    for (const [name, value] of Object.entries(values)) {
+      if (value) this.contentEl.style.setProperty(name, value);
+      else this.contentEl.style.removeProperty(name);
+    }
   }
 
   private renderCell(parent: HTMLElement, cell: NotebookCell, index: number): void {
@@ -384,13 +403,22 @@ export class NotebookView extends TextFileView {
 
   private async choosePython(): Promise<void> {
     if (!this.file) return;
-    const chosen = await promptPythonPath(this.app, pythonForNotebook(this.plugin.settings, this.file.path));
-    if (chosen === null) return;
-    if (chosen) this.plugin.settings.notebookPythonPaths[this.file.path] = chosen;
-    else delete this.plugin.settings.notebookPythonPaths[this.file.path];
-    await this.plugin.saveSettings();
-    await this.releaseBridge();
-    this.render();
+    const filePath = this.file.path;
+    const adapter = this.app.vault.adapter;
+    if (!(adapter instanceof FileSystemAdapter)) { new Notice("A local desktop vault is required."); return; }
+    const current = pythonForNotebook(this.plugin.settings, filePath);
+    const chosen = await promptPythonEnvironment(this.app, adapter.getBasePath(), current, [this.plugin.settings.defaultPythonPath, ...Object.values(this.plugin.settings.notebookPythonPaths)]);
+    if (chosen === null || this.file?.path !== filePath) return;
+    const next = chosen || this.plugin.settings.defaultPythonPath;
+    if (next !== current && !this.plugin.sessions.canSwitch(filePath, this.bridge)) {
+      new Notice("Another view is using this notebook's Python kernel. Close the other view before changing environments.", 10_000);
+      return;
+    }
+    try {
+      if (next !== current) await this.releaseBridge();
+      await saveNotebookEnvironmentBinding(this.plugin.settings, filePath, chosen, () => this.plugin.saveSettings());
+      this.render();
+    } catch (error) { new Notice(`Could not change Python environment: ${(error as Error).message}`, 10_000); }
   }
 
   private async getBridge(): Promise<BridgeClient> {

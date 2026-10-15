@@ -1,6 +1,20 @@
 # ObJupyter
 
-[English](README.en.md)
+<div align="center">
+  <img src="docs/assets/objupyter-banner.svg" alt="ObJupyter：在 Obsidian 中编辑并运行本地 Jupyter 笔记本" width="100%" />
+  <p><strong>让想法、代码与运行结果在同一座知识库相遇。</strong></p>
+  <p>
+    <a href="manifest.json"><img src="docs/assets/badge-version.svg" alt="版本 0.1.0" /></a>
+    <a href="#使用"><img src="docs/assets/badge-obsidian.svg" alt="需要 Obsidian 1.5 或更新版本" /></a>
+    <a href="#使用"><img src="docs/assets/badge-windows.svg" alt="面向 Windows 桌面端" /></a>
+    <a href="#功能"><img src="docs/assets/badge-nbformat.svg" alt="Notebook v4 格式" /></a>
+    <a href="#支持项目"><img src="docs/assets/badge-coffee.svg" alt="支持 ObJupyter" /></a>
+  </p>
+  <p><strong>简体中文</strong> · <a href="README.en.md">English</a></p>
+  <p><a href="#功能">功能</a> · <a href="#使用">使用</a> · <a href="#支持项目">支持项目</a></p>
+</div>
+
+---
 
 在 Obsidian 中打开、编辑和运行 Jupyter 笔记本。代码、Markdown 和运行结果保存在同一个 `.ipynb` 文件中。
 
@@ -28,3 +42,16 @@
 ## 安装与许可
 
 目前尚未上架 Obsidian 社区插件目录。上架后，插件文件可直接从社区插件市场安装；Python 运行环境仍需单独准备。项目采用 [MIT 许可证](LICENSE)。
+
+## 支持项目
+
+如果 ObJupyter 对你有帮助，欢迎通过微信或支付宝自愿支持后续开发与维护。赞助不解锁额外功能，也不是使用插件或反馈问题的前提。
+
+<details>
+<summary><img src="docs/assets/badge-coffee.svg" alt="Buy me a coffee，点击展开收款码" /> </summary>
+
+| 微信支付 | 支付宝 |
+| :---: | :---: |
+| <img src="assets/support/wechat-pay.jpg" alt="微信支付收款码" width="240"> | <img src="assets/support/alipay.jpg" alt="支付宝收款码" width="240"> |
+
+</details>

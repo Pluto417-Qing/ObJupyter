@@ -2,7 +2,7 @@ import { Notice, Plugin, PluginSettingTab, Setting, TFile, normalizePath } from 
 import { createNotebook } from "./notebook/model";
 import { serializeNotebook } from "./notebook/serializer";
 import { SessionManager } from "./kernel/session-manager";
-import { DEFAULT_SETTINGS, normalizeSettings, renameNotebookBinding, type ObJupyterSettings } from "./settings";
+import { DEFAULT_SETTINGS, normalizeSettings, renameNotebookBinding, type AppearanceSettings, type ObJupyterSettings } from "./settings";
 import { NOTEBOOK_VIEW_TYPE, NotebookView } from "./view/notebook-view";
 
 class ObJupyterSettingsTab extends PluginSettingTab {
@@ -23,7 +23,7 @@ class ObJupyterSettingsTab extends PluginSettingTab {
 }
 
 export default class ObJupyterPlugin extends Plugin {
-  settings: ObJupyterSettings = { ...DEFAULT_SETTINGS, notebookPythonPaths: {} };
+  settings: ObJupyterSettings = { ...DEFAULT_SETTINGS, notebookPythonPaths: {}, appearance: { ...DEFAULT_SETTINGS.appearance } };
   sessions = new SessionManager();
 
   async onload(): Promise<void> {
@@ -58,6 +58,23 @@ export default class ObJupyterPlugin extends Plugin {
   async onunload(): Promise<void> { await this.sessions.dispose(); }
 
   async saveSettings(): Promise<void> { await this.saveData(this.settings); }
+
+  async setAppearanceColor(key: keyof AppearanceSettings, value: string): Promise<void> {
+    this.settings.appearance[key] = value;
+    await this.saveAppearance();
+  }
+
+  async resetAppearance(): Promise<void> {
+    this.settings.appearance = { ...DEFAULT_SETTINGS.appearance };
+    await this.saveAppearance();
+  }
+
+  private async saveAppearance(): Promise<void> {
+    for (const leaf of this.app.workspace.getLeavesOfType(NOTEBOOK_VIEW_TYPE)) {
+      if (leaf.view instanceof NotebookView) leaf.view.applyAppearance();
+    }
+    await this.saveSettings();
+  }
 
   private withActiveView(checking: boolean, action: (view: NotebookView) => void): boolean {
     const view = this.app.workspace.getActiveViewOfType(NotebookView);

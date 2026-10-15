@@ -1,5 +1,13 @@
-import { App, Modal, setIcon } from "obsidian";
+import { setIcon } from "obsidian";
 import type { NotebookCell } from "../notebook/model";
+
+function environmentName(pythonPath: string): string {
+  const parts = pythonPath.split(/[\\/]/).filter(Boolean);
+  const last = parts.at(-1)?.toLowerCase();
+  if (last === "python.exe" && parts.at(-2)?.toLowerCase() === "scripts") return parts.at(-3) ?? "Python";
+  if (last === "python.exe") return parts.at(-2) ?? "Python";
+  return parts.at(-1) ?? "Python";
+}
 
 export interface ToolbarActions {
   create(): void;
@@ -8,6 +16,7 @@ export interface ToolbarActions {
   interrupt(): void;
   restart(): void;
   choosePython(): void;
+  openAppearance(): void;
   changeCellType(type: NotebookCell["cell_type"]): void;
 }
 
@@ -33,35 +42,11 @@ export function renderToolbar(parent: HTMLElement, pythonPath: string, selectedT
   type.onchange = () => actions.changeCellType(type.value as NotebookCell["cell_type"]);
   const environment = bar.createEl("button", { cls: "objupyter-python-button", attr: { type: "button", "aria-label": "Choose Python environment" } });
   setIcon(environment, "circle-dot");
-  environment.createSpan({ text: pythonPath ? `Python: ${pythonPath.split(/[\\/]/).pop()}` : "Choose Python…" });
+  environment.createSpan({ text: pythonPath ? `Python: ${environmentName(pythonPath)}` : "Choose Python…" });
   environment.title = pythonPath || "Choose a Python executable";
   environment.onclick = actions.choosePython;
+  const appearance = bar.createEl("button", { cls: "objupyter-toolbar-button objupyter-appearance-button", attr: { type: "button", "aria-label": "Notebook appearance settings", title: "Notebook appearance settings" } });
+  setIcon(appearance, "settings-2");
+  appearance.onclick = actions.openAppearance;
   return type;
-}
-
-class PythonPathModal extends Modal {
-  private settled = false;
-  constructor(app: App, private current: string, private resolve: (path: string | null) => void) { super(app); }
-  onOpen(): void {
-    this.titleEl.setText("Python environment for this notebook");
-    this.contentEl.createEl("p", { text: "Enter the full path to python.exe from a Python, venv, or Conda environment." });
-    const input = this.contentEl.createEl("input", { type: "text", value: this.current, cls: "objupyter-path-input" });
-    input.placeholder = "C:\\path\\to\\python.exe";
-    const buttons = this.contentEl.createDiv({ cls: "objupyter-modal-actions" });
-    buttons.createEl("button", { text: "Cancel" }).onclick = () => this.close();
-    buttons.createEl("button", { text: "Use this Python", cls: "mod-cta" }).onclick = () => {
-      this.settled = true;
-      this.resolve(input.value.trim());
-      this.close();
-    };
-    input.focus();
-  }
-  onClose(): void {
-    if (!this.settled) this.resolve(null);
-    this.contentEl.empty();
-  }
-}
-
-export function promptPythonPath(app: App, current: string): Promise<string | null> {
-  return new Promise((resolve) => new PythonPathModal(app, current, resolve).open());
 }

@@ -1,8 +1,5 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { App, Modal } from "obsidian";
-
-const runFile = promisify(execFile);
+import { probePython } from "./environment-manager";
 
 export interface EnvironmentCheck {
   executable: string;
@@ -11,12 +8,9 @@ export interface EnvironmentCheck {
 
 export async function checkEnvironment(pythonPath: string): Promise<EnvironmentCheck> {
   if (!pythonPath.trim()) throw new Error("Choose a Python executable first.");
-  const script = "import importlib.util,json,sys; print(json.dumps({'executable':sys.executable,'missing':[x for x in ('jupyter_client','ipykernel') if importlib.util.find_spec(x) is None]}))";
   try {
-    const { stdout } = await runFile(pythonPath, ["-c", script], { timeout: 15_000, windowsHide: true });
-    const result = JSON.parse(stdout.trim()) as EnvironmentCheck;
-    if (!result.executable || !Array.isArray(result.missing)) throw new Error("Unexpected Python response");
-    return result;
+    const result = await probePython(pythonPath);
+    return { executable: result.executable, missing: result.missing };
   } catch (error) {
     throw new Error(`Could not run Python: ${(error as Error).message}`);
   }
