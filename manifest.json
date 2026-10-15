@@ -1,0 +1,8 @@
+{
+  "id": "objupyter",
+  "name": "ObJupyter",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Edit and run Jupyter notebooks in an Obsidian vault.",
+  "isDesktopOnly": true
+}

@@ -1,0 +1,25 @@
+.objupyter-view { overflow: auto; padding: 0 18px 24px; }
+.objupyter-toolbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0; background: var(--background-primary); border-bottom: 1px solid var(--background-modifier-border); }
+.objupyter-python-button { margin-left: auto; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.objupyter-cells { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.objupyter-cell { border: 1px solid var(--background-modifier-border); border-radius: 8px; overflow: hidden; background: var(--background-primary); }
+.objupyter-cell:focus-within { border-color: var(--interactive-accent); }
+.objupyter-cell-header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--background-secondary); }
+.objupyter-cell-header button { padding: 2px 8px; font-size: var(--font-smaller); }
+.objupyter-cell-type { max-width: 95px; font-size: var(--font-smaller); }
+.objupyter-count { min-width: 48px; color: var(--text-muted); font-family: var(--font-monospace); }
+.objupyter-status { margin-right: auto; color: var(--text-muted); font-size: var(--font-smaller); }
+.objupyter-editor .cm-editor { font-family: var(--font-monospace); background: var(--background-primary); }
+.objupyter-editor .cm-content { padding: 10px; min-height: 38px; }
+.objupyter-markdown-preview { padding: 10px 16px; }
+.objupyter-outputs { padding: 0 12px; }
+.objupyter-output { border-top: 1px solid var(--background-modifier-border); padding: 8px 0; overflow: auto; }
+.objupyter-output pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-monospace); }
+.objupyter-output img { max-width: 100%; height: auto; }
+.objupyter-error, .objupyter-stderr { color: var(--text-error); }
+.objupyter-input-area:not(:empty) { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+.objupyter-input-area input { flex: 1; }
+.objupyter-footer, .objupyter-modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+.objupyter-path-input { width: 100%; }
+.objupyter-invalid-preview { max-height: 300px; overflow: auto; white-space: pre-wrap; }
+.objupyter-html-output { overflow: auto; }

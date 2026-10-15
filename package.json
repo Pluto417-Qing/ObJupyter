@@ -1,0 +1,27 @@
+{
+  "name": "objupyter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:bridge": "python -m unittest discover -s tests -p test_bridge.py"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.4",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.5",
+    "codemirror": "^6.0.2",
+    "dompurify": "^3.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.8.7",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.4"
+  }
+}
