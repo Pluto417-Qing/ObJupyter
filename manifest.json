@@ -2,7 +2,7 @@
   "id": "objupyter",
   "name": "Jupyter Notebook Editor",
   "author": "yuanqh23",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "minAppVersion": "1.5.0",
   "description": "Edit and run Jupyter notebooks in your vault.",
   "isDesktopOnly": true

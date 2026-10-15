@@ -9,8 +9,9 @@ function appendText(parent: HTMLElement, text: string, className = ""): void {
   parent.createEl("pre", { text, cls: className });
 }
 
-function safeHtml(html: string): string {
+function safeHtml(html: string): DocumentFragment {
   return DOMPurify.sanitize(html, {
+    RETURN_DOM_FRAGMENT: true,
     USE_PROFILES: { html: true },
     FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "input", "button"],
     FORBID_ATTR: ["style"]
@@ -50,7 +51,7 @@ export function renderOutput(parent: HTMLElement, output: NotebookOutput): void 
   const html = asText(data["text/html"]);
   if (html) {
     const element = parent.createDiv({ cls: "objupyter-html-output" });
-    element.innerHTML = safeHtml(html);
+    element.appendChild(safeHtml(html));
     return;
   }
   appendText(parent, asText(data["text/plain"]) || "[Unsupported output type]");
