@@ -115,7 +115,7 @@ class BridgeTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32", "Windows shell output uses the system code page")
     def test_windows_shell_output_uses_native_encoding(self):
-        expected = "中文命令输出"
+        expected = "é shell output"
         output_file = Path(self.directory.name) / "shell-output.txt"
         output_file.write_bytes((expected + "\r\n").encode(locale.getpreferredencoding(False)))
         result, events = self.request("execute", {"cellId": "shell", "code": '!type "shell-output.txt"'})
