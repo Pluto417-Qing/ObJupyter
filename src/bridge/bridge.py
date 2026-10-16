@@ -58,7 +58,11 @@ class Bridge:
         self.cwd = cwd
         specs = KernelSpecManager(kernel_dirs=[self.spec_dir.name], ensure_native_kernel=False)
         self.manager = AsyncKernelManager(kernel_name="objupyter", kernel_spec_manager=specs)
-        await self.manager.start_kernel(cwd=cwd)
+        kernel_env = os.environ.copy()
+        # The bridge uses UTF-8 for its JSON pipe, but IPython must decode
+        # Windows shell commands using the system code page.
+        kernel_env.pop("PYTHONIOENCODING", None)
+        await self.manager.start_kernel(cwd=cwd, env=kernel_env)
         self.client = self.manager.client()
         self.client.start_channels()
         await self.client.wait_for_ready(timeout=30)

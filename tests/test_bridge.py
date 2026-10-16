@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import locale
 import os
 import queue
 import subprocess
@@ -111,6 +112,16 @@ class BridgeTests(unittest.TestCase):
         self.assertTrue(any(e.get("output", {}).get("text") == "Hello Ada\n" for e in events if e["event"] == "output"))
         _, events = self.request("execute", {"cellId": "image", "code": "from IPython.display import display, Image\ndisplay(Image(data=b'\\x89PNG\\r\\n\\x1a\\n'))"})
         self.assertTrue(any("image/png" in e.get("output", {}).get("data", {}) for e in events if e["event"] == "output"))
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows shell output uses the system code page")
+    def test_windows_shell_output_uses_native_encoding(self):
+        expected = "中文命令输出"
+        output_file = Path(self.directory.name) / "shell-output.txt"
+        output_file.write_bytes((expected + "\r\n").encode(locale.getpreferredencoding(False)))
+        result, events = self.request("execute", {"cellId": "shell", "code": '!type "shell-output.txt"'})
+        self.assertEqual(result["status"], "ok")
+        output = "".join(e.get("output", {}).get("text", "") for e in events if e["event"] == "output")
+        self.assertIn(expected, output)
 
 
 if __name__ == "__main__":
