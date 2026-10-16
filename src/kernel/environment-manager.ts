@@ -120,13 +120,17 @@ export async function discoverEnvironments(vaultRoot: string, configuredPaths: s
   });
 }
 
-async function runProcess(executable: string, args: string[], signal?: AbortSignal): Promise<void> {
+async function runProcess(executable: string, args: string[], signal?: AbortSignal, env: NodeJS.ProcessEnv = process.env, onOutput?: (chunk: string) => void): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(executable, args, { windowsHide: true, shell: false, signal, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(executable, args, { windowsHide: true, shell: false, signal, env, stdio: ["ignore", "pipe", "pipe"] });
     const timeout = args[1] === "pip" ? 600_000 : 120_000;
     const timer = setTimeout(() => { child.kill(); reject(new Error(`${path.basename(executable)} timed out after ${Math.round(timeout / 1000)} seconds.`)); }, timeout);
     let details = "";
-    const append = (chunk: Buffer) => { details = (details + chunk.toString()).slice(-4000); };
+    const append = (chunk: Buffer) => {
+      const output = chunk.toString();
+      details = (details + output).slice(-4000);
+      onOutput?.(output);
+    };
     child.stdout.on("data", append);
     child.stderr.on("data", append);
     child.once("error", (error) => { clearTimeout(timer); reject(error); });
@@ -146,18 +150,37 @@ export function dependencyInstallCommand(executable: string, missing: string[]):
 }
 
 export interface InstallationDeps {
-  run(executable: string, args: string[], signal?: AbortSignal): Promise<void>;
+  run(executable: string, args: string[], signal?: AbortSignal, onOutput?: (chunk: string) => void): Promise<void>;
+  runWithoutProxy?(executable: string, args: string[], signal?: AbortSignal, onOutput?: (chunk: string) => void): Promise<void>;
   probe(executable: string): Promise<PythonProbe>;
 }
 
-const defaultInstallationDeps: InstallationDeps = { run: runProcess, probe: probePython };
+const defaultInstallationDeps: InstallationDeps = {
+  run(executable, args, signal, onOutput) {
+    return runProcess(executable, args, signal, process.env, onOutput);
+  },
+  runWithoutProxy(executable, args, signal, onOutput) {
+    return runProcess(executable, args, signal, { ...process.env, NO_PROXY: "*", no_proxy: "*" }, onOutput);
+  },
+  probe: probePython
+};
 
-export async function installKernelDependencies(executable: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: InstallationDeps = defaultInstallationDeps): Promise<PythonProbe> {
+export async function installKernelDependencies(executable: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: InstallationDeps = defaultInstallationDeps, onOutput?: (chunk: string) => void): Promise<PythonProbe> {
   const initial = await deps.probe(executable);
   const missing = KERNEL_PACKAGES.filter((item) => initial.missing.includes(item));
   if (!missing.length) return initial;
   onStage(`Installing ${missing.join(" and ")}…`);
-  await deps.run(initial.executable, ["-m", "pip", "install", ...missing], signal);
+  const args = ["-m", "pip", "install", ...missing];
+  try { await deps.run(initial.executable, args, signal, onOutput); }
+  catch (error) {
+    if (!/ProxyError|Cannot connect to proxy/i.test((error as Error).message) || !deps.runWithoutProxy || signal?.aborted) throw error;
+    onStage("Configured proxy is unavailable. Retrying without proxy…");
+    try { await deps.runWithoutProxy(initial.executable, args, signal, onOutput); }
+    catch (directError) {
+      const detail = (directError as Error).message.slice(-500);
+      throw new Error(`Pip could not connect through the configured proxy or directly. Check your network or proxy settings. Direct attempt: ${detail}`);
+    }
+  }
   onStage("Checking the Python environment…");
   const checked = await deps.probe(initial.executable);
   if (checked.missing.length) throw new Error(`Missing packages: ${checked.missing.join(", ")}`);
@@ -195,22 +218,24 @@ export async function createVaultEnvironment(vaultRoot: string, basePython: stri
 export interface SetupDeps {
   exists(filename: string): Promise<boolean>;
   create(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal): Promise<string>;
-  install(executable: string, onStage: (stage: string) => void, signal?: AbortSignal): Promise<PythonProbe>;
+  install(executable: string, onStage: (stage: string) => void, signal?: AbortSignal, onOutput?: (chunk: string) => void): Promise<PythonProbe>;
 }
 
 const defaultSetupDeps: SetupDeps = {
   exists: defaultDiscoveryDeps.exists,
   create: createVaultEnvironment,
-  install: installKernelDependencies
+  install(executable, onStage, signal, onOutput) {
+    return installKernelDependencies(executable, onStage, signal, defaultInstallationDeps, onOutput);
+  }
 };
 
-export async function setupVaultEnvironment(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: SetupDeps = defaultSetupDeps): Promise<string> {
+export async function setupVaultEnvironment(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: SetupDeps = defaultSetupDeps, onOutput?: (chunk: string) => void): Promise<string> {
   const target = path.join(vaultRoot, ".venv");
   const executable = await deps.exists(target)
     ? vaultEnvironmentPath(vaultRoot)
     : await deps.create(vaultRoot, basePython, onStage, signal);
   let checked: PythonProbe;
-  try { checked = await deps.install(executable, onStage, signal); }
+  try { checked = await deps.install(executable, onStage, signal, onOutput); }
   catch (error) {
     if (await deps.exists(target) && !(await deps.exists(executable))) {
       throw new Error("The vault .venv exists but has no usable Python. Repair or remove it manually before trying again.");

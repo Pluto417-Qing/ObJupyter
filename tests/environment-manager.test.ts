@@ -114,7 +114,7 @@ describe("one-click vault environment setup", () => {
     const deps: SetupDeps = { async exists() { return false; }, create, install };
     expect(await setupVaultEnvironment(root, base, () => {}, undefined, deps)).toBe(executable);
     expect(create).toHaveBeenCalledWith(root, base, expect.any(Function), undefined);
-    expect(install).toHaveBeenCalledWith(executable, expect.any(Function), undefined);
+    expect(install).toHaveBeenCalledWith(executable, expect.any(Function), undefined, undefined);
   });
 
   it("reuses an existing vault environment without creating it again", async () => {
@@ -132,7 +132,7 @@ describe("one-click vault environment setup", () => {
       .mockResolvedValueOnce({ ...probe(executable), missing: ["ipykernel"] })
       .mockResolvedValueOnce(probe(executable));
     expect((await installKernelDependencies(executable, () => {}, undefined, { run, probe: check })).missing).toEqual([]);
-    expect(run).toHaveBeenCalledWith(executable, ["-m", "pip", "install", "ipykernel"], undefined);
+    expect(run).toHaveBeenCalledWith(executable, ["-m", "pip", "install", "ipykernel"], undefined, undefined);
     expect(check).toHaveBeenCalledTimes(2);
   });
 
@@ -140,6 +140,38 @@ describe("one-click vault environment setup", () => {
     const run = vi.fn(async () => {});
     await installKernelDependencies(executable, () => {}, undefined, { run, async probe() { return probe(executable); } });
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it("retries directly when the configured proxy cannot be reached", async () => {
+    const run = vi.fn(async () => { throw new Error("ProxyError('Cannot connect to proxy')"); });
+    const runWithoutProxy = vi.fn(async () => {});
+    const check = vi.fn()
+      .mockResolvedValueOnce({ ...probe(executable), missing: ["jupyter_client"] })
+      .mockResolvedValueOnce(probe(executable));
+    const stages: string[] = [];
+    await installKernelDependencies(executable, (stage) => stages.push(stage), undefined, { run, runWithoutProxy, probe: check });
+    expect(runWithoutProxy).toHaveBeenCalledWith(executable, ["-m", "pip", "install", "jupyter_client"], undefined, undefined);
+    expect(stages).toContain("Configured proxy is unavailable. Retrying without proxy…");
+  });
+
+  it("explains when neither the proxy nor a direct connection works", async () => {
+    await expect(installKernelDependencies(executable, () => {}, undefined, {
+      async run() { throw new Error("ProxyError('Cannot connect to proxy')"); },
+      async runWithoutProxy() { throw new Error("Connection timed out"); },
+      async probe() { return { ...probe(executable), missing: ["ipykernel"] }; }
+    })).rejects.toThrow("Pip could not connect through the configured proxy or directly");
+  });
+
+  it("forwards pip output while dependencies install", async () => {
+    const output: string[] = [];
+    const check = vi.fn()
+      .mockResolvedValueOnce({ ...probe(executable), missing: ["ipykernel"] })
+      .mockResolvedValueOnce(probe(executable));
+    await installKernelDependencies(executable, () => {}, undefined, {
+      async run(_executable, _args, _signal, onOutput) { onOutput?.("Collecting ipykernel\n"); },
+      probe: check
+    }, (chunk) => output.push(chunk));
+    expect(output).toEqual(["Collecting ipykernel\n"]);
   });
 
   it("reports packages still missing after installation", async () => {

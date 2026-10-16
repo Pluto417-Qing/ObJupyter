@@ -9,6 +9,8 @@ class EnvironmentPickerModal extends Modal {
   private controller: AbortController | null = null;
   private list!: HTMLElement;
   private status!: HTMLElement;
+  private log!: HTMLElement;
+  private logText = "";
   private baseSelect!: HTMLSelectElement;
   private createButton!: HTMLButtonElement;
   private createHelp!: HTMLElement;
@@ -17,12 +19,14 @@ class EnvironmentPickerModal extends Modal {
   constructor(app: App, private root: string, private current: string, private configured: string[], private resolve: (value: string | null) => void) { super(app); }
 
   onOpen(): void {
+    this.modalEl.addClass("objupyter-environment-modal");
     this.titleEl.setText("Python environment for this notebook");
     this.contentEl.createEl("p", { text: "Choose a discovered environment, enter a Python executable path, or set up a vault .venv with Jupyter dependencies." });
     const top = this.contentEl.createDiv({ cls: "objupyter-environment-actions" });
     top.createEl("button", { text: "Refresh", attr: { type: "button" } }).onclick = () => void this.refresh();
     top.createEl("button", { text: "Use default", attr: { type: "button" } }).onclick = () => this.finish("");
     this.status = this.contentEl.createDiv({ cls: "objupyter-environment-status", attr: { "aria-live": "polite" } });
+    this.log = this.contentEl.createEl("pre", { cls: "objupyter-environment-log", attr: { role: "log", "aria-label": "Python package installation output" } });
     this.list = this.contentEl.createDiv({ cls: "objupyter-environment-list" });
 
     const manual = this.contentEl.createDiv({ cls: "objupyter-environment-manual" });
@@ -42,7 +46,7 @@ class EnvironmentPickerModal extends Modal {
     this.createButton.onclick = () => void this.run(async (signal) => {
       const base = this.baseSelect.value;
       if (!base && !(await defaultDiscoveryDeps.exists(path.join(this.root, ".venv")))) throw new Error("Choose a base Python installation first.");
-      const executable = await setupVaultEnvironment(this.root, base, (stage) => this.setStatus(stage), signal);
+      const executable = await setupVaultEnvironment(this.root, base, (stage) => this.showStage(stage), signal, undefined, (output) => this.appendLog(output));
       this.finish(executable);
     });
     this.createHelp = create.createEl("small", { cls: "objupyter-environment-help" });
@@ -51,8 +55,20 @@ class EnvironmentPickerModal extends Modal {
 
   private setStatus(message: string, error = false): void {
     if (this.closed) return;
-    this.status.setText(message);
+    this.status.setText(message.length > 180 ? `${message.slice(0, 180)}…` : message);
     this.status.toggleClass("is-error", error);
+  }
+
+  private appendLog(output: string): void {
+    if (this.closed) return;
+    this.logText = (this.logText + output).slice(-16_000);
+    this.log.setText(this.logText);
+    this.log.scrollTop = this.log.scrollHeight;
+  }
+
+  private showStage(stage: string): void {
+    this.setStatus(stage);
+    this.appendLog(`${stage}\n`);
   }
 
   private async refresh(): Promise<void> {
@@ -81,7 +97,7 @@ class EnvironmentPickerModal extends Modal {
       actions.createEl("button", { text: "Use", attr: { type: "button", "aria-label": `Use ${environment.executable}` } }).onclick = () => this.finish(environment.executable);
       if (environment.missing.length) {
         actions.createEl("button", { text: "Install dependencies", attr: { type: "button", "aria-label": `Install Jupyter dependencies into ${environment.executable}` } }).onclick = () => void this.run(async (signal) => {
-          const checked = await installKernelDependencies(environment.executable, (stage) => this.setStatus(stage), signal);
+          const checked = await installKernelDependencies(environment.executable, (stage) => this.showStage(stage), signal, undefined, (output) => this.appendLog(output));
           environment.missing = checked.missing;
           this.setStatus(`Jupyter dependencies installed in ${environment.executable}.`);
         });
@@ -108,9 +124,15 @@ class EnvironmentPickerModal extends Modal {
     if (this.busy || this.closed) return;
     this.busy = true;
     this.controller = new AbortController();
+    this.logText = "";
+    this.log.setText("");
     this.contentEl.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>("button, input, select").forEach((control) => { control.disabled = true; });
     try { await action(this.controller.signal); }
-    catch (error) { this.setStatus((error as Error).message, true); }
+    catch (error) {
+      const message = (error as Error).message;
+      this.setStatus(message, true);
+      this.appendLog(`${message}\n`);
+    }
     finally {
       this.controller = null;
       this.busy = false;

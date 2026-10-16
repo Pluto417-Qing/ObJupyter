@@ -273,12 +273,16 @@
 .objupyter-invalid-preview { max-height: 300px; overflow: auto; white-space: pre-wrap; }
 .objupyter-html-output { overflow: auto; }
 .objupyter-modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+.objupyter-environment-modal { width: min(680px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); }
+.objupyter-environment-modal .modal-content { min-width: 0; max-height: calc(100vh - 120px); overflow-x: hidden; overflow-y: auto; }
 .objupyter-environment-actions,
 .objupyter-environment-manual,
 .objupyter-environment-create { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-.objupyter-environment-status { min-height: 20px; color: var(--text-muted); font-size: var(--font-smaller); }
+.objupyter-environment-status { min-height: 20px; overflow-wrap: anywhere; color: var(--text-muted); font-size: var(--font-smaller); }
 .objupyter-environment-status.is-error,
 .objupyter-environment-warning { color: var(--text-error); }
+.objupyter-environment-log { height: min(180px, 25vh); margin: 8px 0; padding: 8px; overflow: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); background: var(--background-secondary); color: var(--text-muted); font-size: var(--font-smaller); white-space: pre-wrap; overflow-wrap: anywhere; }
+.objupyter-environment-log:empty { display: none; }
 .objupyter-environment-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--background-modifier-border); }
 .objupyter-environment-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 7px; border-bottom: 1px solid var(--background-modifier-border); }
 .objupyter-environment-row:last-child { border-bottom: 0; }
@@ -287,7 +291,7 @@
 .objupyter-environment-info small { display: block; color: var(--text-muted); }
 .objupyter-environment-info .objupyter-environment-warning { color: var(--text-error); }
 .objupyter-environment-manual input { flex: 1 1 220px; min-width: 0; }
-.objupyter-environment-create select { flex: 1 1 220px; min-width: 0; }
+.objupyter-environment-create select { flex: 1 1 220px; min-width: 0; max-width: 100%; }
 .objupyter-environment-help { flex-basis: 100%; color: var(--text-muted); }
 .objupyter-color-setting {
   display: flex;
