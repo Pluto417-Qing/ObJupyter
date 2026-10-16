@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { createVaultEnvironment, discoverEnvironments, installKernelDependencies, parseCondaPaths, parseLauncherPaths, vaultEnvironmentPath, type CreationDeps, type DiscoveryDeps, type PythonProbe } from "../src/kernel/environment-manager";
+import { createVaultEnvironment, dependencyInstallCommand, discoverEnvironments, installKernelDependencies, parseCondaPaths, parseLauncherPaths, setupVaultEnvironment, vaultEnvironmentPath, type CreationDeps, type DiscoveryDeps, type PythonProbe, type SetupDeps } from "../src/kernel/environment-manager";
 import { saveNotebookEnvironmentBinding } from "../src/kernel/environment-binding";
 import { normalizeSettings } from "../src/settings";
 
@@ -52,37 +52,39 @@ describe("vault environment creation", () => {
   const root = path.resolve("C:\\Test Vault");
   const base = "C:\\Program Files\\Python311\\python.exe";
 
-  it("creates .venv, installs dependencies, then returns the interpreter", async () => {
+  it("creates .venv without installing packages, then returns the interpreter", async () => {
     const run = vi.fn(async () => {});
-    const install = vi.fn(async (executable: string) => probe(executable));
+    const check = vi.fn(async (executable: string) => probe(executable));
     const deps: CreationDeps = {
       async claim() {},
-      async probe(filename) { return probe(filename); },
-      run,
-      install
+      probe: check,
+      run
     };
     const stages: string[] = [];
     expect(await createVaultEnvironment(root, base, (stage) => stages.push(stage), undefined, deps)).toBe(vaultEnvironmentPath(root));
     expect(run).toHaveBeenCalledWith(base, ["-m", "venv", path.join(root, ".venv")], undefined);
-    expect(install).toHaveBeenCalledOnce();
+    expect(check).toHaveBeenCalledWith(vaultEnvironmentPath(root));
+    expect(run).toHaveBeenCalledOnce();
     expect(stages).toContain("Creating .venv in the vault…");
   });
 
   it("does not overwrite an existing .venv", async () => {
     const run = vi.fn(async () => {});
-    const deps: CreationDeps = { async claim() { throw Object.assign(new Error("exists"), { code: "EEXIST" }); }, async probe(filename) { return probe(filename); }, run, async install(filename) { return probe(filename); } };
+    const deps: CreationDeps = { async claim() { throw Object.assign(new Error("exists"), { code: "EEXIST" }); }, async probe(filename) { return probe(filename); }, run };
     await expect(createVaultEnvironment(root, base, () => {}, undefined, deps)).rejects.toThrow("already contains .venv");
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("does not report creation as successful when dependency installation fails", async () => {
+  it("does not report creation as successful when the new interpreter cannot run", async () => {
     const deps: CreationDeps = {
       async claim() {},
-      async probe(filename) { return probe(filename); },
-      async run() {},
-      async install() { throw new Error("pip failed"); }
+      async probe(filename) {
+        if (filename === vaultEnvironmentPath(root)) throw new Error("new interpreter failed");
+        return probe(filename);
+      },
+      async run() {}
     };
-    await expect(createVaultEnvironment(root, base, () => {}, undefined, deps)).rejects.toThrow("pip failed");
+    await expect(createVaultEnvironment(root, base, () => {}, undefined, deps)).rejects.toThrow("new interpreter failed");
   });
 
   it("keeps the original binding when saving a new choice fails", async () => {
@@ -92,22 +94,55 @@ describe("vault environment creation", () => {
   });
 });
 
-describe("Jupyter dependency installation", () => {
-  it("installs into the chosen interpreter and verifies the result", async () => {
-    const executable = "D:\\Python39\\python.exe";
-    const run = vi.fn(async () => {});
-    const checked = probe(executable);
-    const stages: string[] = [];
-    expect(await installKernelDependencies(executable, (stage) => stages.push(stage), undefined, {
-      run,
-      async probe() { return checked; }
-    })).toBe(checked);
-    expect(run).toHaveBeenCalledWith(executable, ["-m", "pip", "install", "jupyter_client", "ipykernel"], undefined);
-    expect(stages.at(-1)).toBe("Checking the new environment…");
+describe("Jupyter dependency guidance", () => {
+  it("provides a PowerShell command for the selected interpreter and missing packages", () => {
+    expect(dependencyInstallCommand("C:\\Program Files\\Python311\\python.exe", ["ipykernel"]))
+      .toBe("& 'C:\\Program Files\\Python311\\python.exe' -m pip install ipykernel");
+    expect(dependencyInstallCommand("C:\\Dev's Python\\python.exe", ["jupyter_client"]))
+      .toBe("& 'C:\\Dev''s Python\\python.exe' -m pip install jupyter_client");
+  });
+});
+
+describe("one-click vault environment setup", () => {
+  const root = path.resolve("C:\\Test Vault");
+  const base = "C:\\Python311\\python.exe";
+  const executable = vaultEnvironmentPath(root);
+
+  it("creates a missing vault environment, installs dependencies, and returns it", async () => {
+    const create = vi.fn(async () => executable);
+    const install = vi.fn(async () => probe(executable));
+    const deps: SetupDeps = { async exists() { return false; }, create, install };
+    expect(await setupVaultEnvironment(root, base, () => {}, undefined, deps)).toBe(executable);
+    expect(create).toHaveBeenCalledWith(root, base, expect.any(Function), undefined);
+    expect(install).toHaveBeenCalledWith(executable, expect.any(Function), undefined);
   });
 
-  it("reports failure if packages are still missing", async () => {
-    const executable = "D:\\Python39\\python.exe";
+  it("reuses an existing vault environment without creating it again", async () => {
+    const create = vi.fn(async () => executable);
+    const install = vi.fn(async () => probe(executable));
+    const deps: SetupDeps = { async exists() { return true; }, create, install };
+    expect(await setupVaultEnvironment(root, "", () => {}, undefined, deps)).toBe(executable);
+    expect(create).not.toHaveBeenCalled();
+    expect(install).toHaveBeenCalledOnce();
+  });
+
+  it("installs only missing packages and verifies the result", async () => {
+    const run = vi.fn(async () => {});
+    const check = vi.fn()
+      .mockResolvedValueOnce({ ...probe(executable), missing: ["ipykernel"] })
+      .mockResolvedValueOnce(probe(executable));
+    expect((await installKernelDependencies(executable, () => {}, undefined, { run, probe: check })).missing).toEqual([]);
+    expect(run).toHaveBeenCalledWith(executable, ["-m", "pip", "install", "ipykernel"], undefined);
+    expect(check).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips pip when dependencies are already present", async () => {
+    const run = vi.fn(async () => {});
+    await installKernelDependencies(executable, () => {}, undefined, { run, async probe() { return probe(executable); } });
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("reports packages still missing after installation", async () => {
     await expect(installKernelDependencies(executable, () => {}, undefined, {
       async run() {},
       async probe() { return { ...probe(executable), missing: ["ipykernel"] }; }

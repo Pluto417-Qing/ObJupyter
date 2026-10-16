@@ -29,13 +29,15 @@
 
 ## 使用
 
-在仓库中打开 `.ipynb` 文件，选择本机 Python 解释器，然后点击单元格旁的运行按钮。首次运行时，如果所选环境缺少 `jupyter_client` 或 `ipykernel`，插件会显示缺少的包及安装命令。请在 PowerShell 中自行运行，例如：
+在仓库中打开 `.ipynb` 文件，点击工具栏中的 Python 环境按钮，选择一个本机 Python 解释器，然后点击单元格旁的运行按钮。要一键建立仓库内环境，请点击 **Set up vault .venv**：插件会用选定的基础 Python 创建 `.venv`、安装缺失的 `jupyter_client` 和 `ipykernel`，并将其用于当前笔记本。已有可用的 `.venv` 会被复用，只补装缺失依赖。
+
+其他 Python 环境也可以在环境列表中点击 **Install dependencies** 自动补齐依赖。如果希望手动安装，可在缺依赖弹窗中点击 **Copy command**，在 PowerShell 中运行复制的命令，例如：
 
 ```powershell
-& "C:\path\to\python.exe" -m pip install jupyter_client ipykernel
+& 'C:\path\to\python.exe' -m pip install jupyter_client ipykernel
 ```
 
-安装完成后重新运行单元格，插件会再次检查环境。插件本身不会安装或更新 Python 包。只查看和编辑笔记本时不需要 Python；执行代码需要本机 Python 以及上述两个包。插件会运行你指定的 Python 解释器，并在该环境中启动内核，因此请只运行可信的笔记本。
+手动安装后点击 **Refresh**，或在缺依赖弹窗中点击 **Check again**。只查看和编辑笔记本时不需要 Python；执行代码需要本机 Python 和这些包。插件会运行你指定的 Python 解释器，并在该环境中启动内核，因此请只运行可信的笔记本。
 
 目前支持 **Windows 桌面版 Obsidian**，需要 Obsidian 1.5.0 或更新版本。运行代码需要本机 Python 环境。
 

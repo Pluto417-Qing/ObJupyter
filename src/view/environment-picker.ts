@@ -1,6 +1,6 @@
 import path from "node:path";
 import { App, Modal } from "obsidian";
-import { createVaultEnvironment, defaultDiscoveryDeps, discoverEnvironments, installKernelDependencies, probePython, vaultEnvironmentPath, type PythonEnvironment } from "../kernel/environment-manager";
+import { defaultDiscoveryDeps, discoverEnvironments, installKernelDependencies, probePython, setupVaultEnvironment, vaultEnvironmentPath, type PythonEnvironment } from "../kernel/environment-manager";
 
 class EnvironmentPickerModal extends Modal {
   private settled = false;
@@ -18,7 +18,7 @@ class EnvironmentPickerModal extends Modal {
 
   onOpen(): void {
     this.titleEl.setText("Python environment for this notebook");
-    this.contentEl.createEl("p", { text: "Choose a discovered environment, enter a Python executable path, or create a vault .venv." });
+    this.contentEl.createEl("p", { text: "Choose a discovered environment, enter a Python executable path, or set up a vault .venv with Jupyter dependencies." });
     const top = this.contentEl.createDiv({ cls: "objupyter-environment-actions" });
     top.createEl("button", { text: "Refresh", attr: { type: "button" } }).onclick = () => void this.refresh();
     top.createEl("button", { text: "Use default", attr: { type: "button" } }).onclick = () => this.finish("");
@@ -36,13 +36,13 @@ class EnvironmentPickerModal extends Modal {
     });
 
     const create = this.contentEl.createDiv({ cls: "objupyter-environment-create" });
-    create.createEl("label", { text: "Create vault .venv using" });
+    create.createEl("label", { text: "Base Python for vault .venv" });
     this.baseSelect = create.createEl("select", { attr: { "aria-label": "Base Python for new environment" } });
-    this.createButton = create.createEl("button", { text: "Create .venv", attr: { type: "button" } });
+    this.createButton = create.createEl("button", { text: "Set up vault .venv", cls: "mod-cta", attr: { type: "button" } });
     this.createButton.onclick = () => void this.run(async (signal) => {
       const base = this.baseSelect.value;
-      if (!base) throw new Error("Choose a base Python installation first.");
-      const executable = await createVaultEnvironment(this.root, base, (stage) => this.setStatus(stage), signal);
+      if (!base && !(await defaultDiscoveryDeps.exists(path.join(this.root, ".venv")))) throw new Error("Choose a base Python installation first.");
+      const executable = await setupVaultEnvironment(this.root, base, (stage) => this.setStatus(stage), signal);
       this.finish(executable);
     });
     this.createHelp = create.createEl("small", { cls: "objupyter-environment-help" });
@@ -93,13 +93,15 @@ class EnvironmentPickerModal extends Modal {
     }
     const exists = await defaultDiscoveryDeps.exists(path.join(this.root, ".venv"));
     if (this.closed) return;
-    this.createButton.disabled = exists || this.baseSelect.options.length === 0;
-    this.createButton.title = exists ? ".venv already exists in this vault. Select or repair it above; existing files will not be replaced." : "Create a virtual environment in the vault root";
+    this.createButton.disabled = exists
+      ? !this.environments.some((item) => path.resolve(item.executable).toLowerCase() === vaultPython)
+      : this.baseSelect.options.length === 0;
+    this.createButton.title = exists ? "Install missing Jupyter packages in the vault .venv and use it" : "Create a vault .venv, install Jupyter packages, and use it";
     this.createHelp.setText(exists
       ? this.environments.some((item) => path.resolve(item.executable).toLowerCase() === vaultPython)
-        ? "The vault .venv already exists; select it above or install its missing kernel packages."
+        ? "The vault .venv already exists. Set up will install only missing Jupyter packages and use it."
         : "The vault .venv folder exists but has no usable Python. Repair or remove it manually before creating a new one."
-      : "If creation stops, the partial .venv remains. Refresh to find and repair it.");
+      : "Requires a local base Python. If setup stops, the partial .venv remains so you can retry.");
   }
 
   private async run(action: (signal: AbortSignal) => Promise<void>): Promise<void> {

@@ -29,13 +29,15 @@ Open, edit, and run Jupyter notebooks in Obsidian. Keep code, Markdown, and resu
 
 ## Getting started
 
-Open an `.ipynb` file in your vault, choose a local Python interpreter, and click a cell's run button. If the selected environment lacks `jupyter_client` or `ipykernel`, the plugin shows the missing packages and a command to run yourself in PowerShell, for example:
+Open an `.ipynb` file in your vault, choose a local Python interpreter from the toolbar, and click a cell's run button. To set up an environment inside the vault in one click, choose a base Python and click **Set up vault .venv**. The plugin creates `.venv`, installs missing `jupyter_client` and `ipykernel` packages, and selects it for the notebook. An existing usable `.venv` is reused and only missing packages are installed.
+
+For other Python environments, click **Install dependencies** in the environment list. To install manually, click **Copy command** in the missing-dependencies dialog and run it in PowerShell, for example:
 
 ```powershell
-& "C:\path\to\python.exe" -m pip install jupyter_client ipykernel
+& 'C:\path\to\python.exe' -m pip install jupyter_client ipykernel
 ```
 
-Run the cell again after installation; the plugin checks the environment again. The plugin does not install or update Python packages. Viewing and editing notebooks does not require Python. Running code requires local Python and those two packages. The plugin launches your selected interpreter and a kernel in that environment, so run only notebooks you trust.
+After a manual installation, click **Refresh** or **Check again** in the missing-dependencies dialog. Viewing and editing notebooks does not require Python. Running code requires local Python and those packages. The plugin launches your selected interpreter and a kernel in that environment, so run only notebooks you trust.
 
 ObJupyter currently supports **Obsidian Desktop on Windows** and requires Obsidian 1.5.0 or later. Running code requires a local Python environment.
 

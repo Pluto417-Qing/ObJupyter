@@ -280,9 +280,10 @@
 .objupyter-environment-status.is-error,
 .objupyter-environment-warning { color: var(--text-error); }
 .objupyter-environment-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--background-modifier-border); }
-.objupyter-environment-row { display: flex; align-items: center; gap: 8px; padding: 7px; border-bottom: 1px solid var(--background-modifier-border); }
+.objupyter-environment-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 7px; border-bottom: 1px solid var(--background-modifier-border); }
 .objupyter-environment-row:last-child { border-bottom: 0; }
-.objupyter-environment-info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.objupyter-environment-info { flex: 1 1 280px; min-width: 0; overflow-wrap: anywhere; }
+.objupyter-environment-row-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .objupyter-environment-info small { display: block; color: var(--text-muted); }
 .objupyter-environment-info .objupyter-environment-warning { color: var(--text-error); }
 .objupyter-environment-manual input { flex: 1 1 220px; min-width: 0; }

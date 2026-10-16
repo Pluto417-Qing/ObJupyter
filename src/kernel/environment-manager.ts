@@ -123,7 +123,7 @@ export async function discoverEnvironments(vaultRoot: string, configuredPaths: s
 async function runProcess(executable: string, args: string[], signal?: AbortSignal): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(executable, args, { windowsHide: true, shell: false, signal, stdio: ["ignore", "pipe", "pipe"] });
-    const timeout = args[1] === "venv" ? 120_000 : 600_000;
+    const timeout = args[1] === "pip" ? 600_000 : 120_000;
     const timer = setTimeout(() => { child.kill(); reject(new Error(`${path.basename(executable)} timed out after ${Math.round(timeout / 1000)} seconds.`)); }, timeout);
     let details = "";
     const append = (chunk: Buffer) => { details = (details + chunk.toString()).slice(-4000); };
@@ -141,6 +141,10 @@ export function vaultEnvironmentPath(vaultRoot: string): string {
   return path.join(vaultRoot, ".venv", "Scripts", "python.exe");
 }
 
+export function dependencyInstallCommand(executable: string, missing: string[]): string {
+  return `& '${executable.replace(/'/g, "''")}' -m pip install ${missing.join(" ")}`;
+}
+
 export interface InstallationDeps {
   run(executable: string, args: string[], signal?: AbortSignal): Promise<void>;
   probe(executable: string): Promise<PythonProbe>;
@@ -149,10 +153,13 @@ export interface InstallationDeps {
 const defaultInstallationDeps: InstallationDeps = { run: runProcess, probe: probePython };
 
 export async function installKernelDependencies(executable: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: InstallationDeps = defaultInstallationDeps): Promise<PythonProbe> {
-  onStage(`Installing ${KERNEL_PACKAGES.join(" and ")}…`);
-  await deps.run(executable, ["-m", "pip", "install", ...KERNEL_PACKAGES], signal);
-  onStage("Checking the new environment…");
-  const checked = await deps.probe(executable);
+  const initial = await deps.probe(executable);
+  const missing = KERNEL_PACKAGES.filter((item) => initial.missing.includes(item));
+  if (!missing.length) return initial;
+  onStage(`Installing ${missing.join(" and ")}…`);
+  await deps.run(initial.executable, ["-m", "pip", "install", ...missing], signal);
+  onStage("Checking the Python environment…");
+  const checked = await deps.probe(initial.executable);
   if (checked.missing.length) throw new Error(`Missing packages: ${checked.missing.join(", ")}`);
   return checked;
 }
@@ -161,14 +168,12 @@ export interface CreationDeps {
   claim(target: string): Promise<void>;
   probe(executable: string): Promise<PythonProbe>;
   run(executable: string, args: string[], signal?: AbortSignal): Promise<void>;
-  install(executable: string, onStage: (stage: string) => void, signal?: AbortSignal): Promise<PythonProbe>;
 }
 
 const defaultCreationDeps: CreationDeps = {
   async claim(target) { await fs.mkdir(target); },
   probe: probePython,
-  run: runProcess,
-  install: installKernelDependencies
+  run: runProcess
 };
 
 export async function createVaultEnvironment(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: CreationDeps = defaultCreationDeps): Promise<string> {
@@ -183,6 +188,35 @@ export async function createVaultEnvironment(vaultRoot: string, basePython: stri
   onStage("Creating .venv in the vault…");
   await deps.run(base.executable, ["-m", "venv", target], signal);
   const executable = vaultEnvironmentPath(vaultRoot);
-  await deps.install(executable, onStage, signal);
+  await deps.probe(executable);
   return executable;
+}
+
+export interface SetupDeps {
+  exists(filename: string): Promise<boolean>;
+  create(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal): Promise<string>;
+  install(executable: string, onStage: (stage: string) => void, signal?: AbortSignal): Promise<PythonProbe>;
+}
+
+const defaultSetupDeps: SetupDeps = {
+  exists: defaultDiscoveryDeps.exists,
+  create: createVaultEnvironment,
+  install: installKernelDependencies
+};
+
+export async function setupVaultEnvironment(vaultRoot: string, basePython: string, onStage: (stage: string) => void, signal?: AbortSignal, deps: SetupDeps = defaultSetupDeps): Promise<string> {
+  const target = path.join(vaultRoot, ".venv");
+  const executable = await deps.exists(target)
+    ? vaultEnvironmentPath(vaultRoot)
+    : await deps.create(vaultRoot, basePython, onStage, signal);
+  let checked: PythonProbe;
+  try { checked = await deps.install(executable, onStage, signal); }
+  catch (error) {
+    if (await deps.exists(target) && !(await deps.exists(executable))) {
+      throw new Error("The vault .venv exists but has no usable Python. Repair or remove it manually before trying again.");
+    }
+    throw error;
+  }
+  onStage("Vault Python environment is ready.");
+  return checked.executable;
 }
